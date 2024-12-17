@@ -32,6 +32,9 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.HttpHeaders;
+import java.util.Collections;
 
 
 /**
@@ -74,6 +77,9 @@ public class RestConsumer {
       case "NONE" -> {
         return getRestTemplateNone();
       } // case
+      case "TOKEN" -> {
+        return getRestTemplateToken();
+      } // case
       default -> {
         return getRestTemplateBasicAuth();
       } // default
@@ -92,6 +98,25 @@ public class RestConsumer {
   }
 
   /**
+   * helper for REST calls without Auth
+   *
+   * @return a pre configured spring RestTemplate object
+   */
+  protected RestTemplate getRestTemplateToken() {
+    RestTemplate result = new RestTemplateBuilder().build();
+    result.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+
+    ClientHttpRequestInterceptor bearerTokenInterceptor = (request, body, execution) -> {
+      request.getHeaders().set(HttpHeaders.AUTHORIZATION, "Bearer " + restConfiguration.getRestPassword());
+      return execution.execute(request, body);
+    };
+
+    result.setInterceptors(Collections.singletonList(bearerTokenInterceptor));
+
+    return result;
+  }
+
+  /**
    * helper for REST calls that use Basic Authentication
    *
    * @return a pre configured spring RestTemplate object
@@ -103,7 +128,6 @@ public class RestConsumer {
     result.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
     return result;
   }
-
 
   /**
    * Helper for rest calls that use x509 cert authentication
@@ -143,6 +167,4 @@ public class RestConsumer {
 
     return resultTemplate;
   }
-
-
 }

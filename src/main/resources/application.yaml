@@ -35,11 +35,11 @@ global:
   generate-ukb-renal-replacement-model-data: false
 fhir:
   server:
-    ## The authentication method, one of NONE, SSL or BASIC (default)
-    auth-method: BASIC
+    ## The authentication method, one of NONE, SSL, TOKEN or BASIC (default)
+    auth-method: TOKEN
     ## the base url of the fhir server (needs to end with a "/")
     rest-url: http://127.0.0.1/fhir/
-    ## BASIC
+    ## BASIC (or 'rest-password' as TOKEN)
     rest-user: x
     rest-password: y
     ## SSL
