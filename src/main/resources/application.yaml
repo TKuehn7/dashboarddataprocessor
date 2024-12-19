@@ -35,11 +35,15 @@ global:
   generate-ukb-renal-replacement-model-data: false
 fhir:
   server:
-    ## The authentication method, one of NONE, SSL, TOKEN or BASIC (default)
+    ## The authentication method, one of NONE, SSL, BASIC or TOKEN (default)
     auth-method: TOKEN
     ## the base url of the fhir server (needs to end with a "/")
     rest-url: http://127.0.0.1/fhir/
-    ## BASIC (or 'rest-password' as TOKEN)
+    ## TOKEN (Keycloak)
+    token-url: https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token
+    client-id: x
+    client-secret: y
+    ## BASIC
     rest-user: x
     rest-password: y
     ## SSL
