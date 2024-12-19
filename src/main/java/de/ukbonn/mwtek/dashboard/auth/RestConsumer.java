@@ -39,15 +39,11 @@ import org.springframework.http.HttpHeaders;
 import org.json.*;
 import java.util.Collections;
 
-
-/**
- * Base class for all rest consumer in this project.
- */
+/** Base class for all rest consumer in this project. */
 @Slf4j
 public class RestConsumer {
 
   protected AbstractRestConfiguration restConfiguration;
-
 
   public RestConsumer(AbstractRestConfiguration restConfiguration) {
     this.restConfiguration = restConfiguration;
@@ -169,8 +165,10 @@ public class RestConsumer {
    */
   protected RestTemplate getRestTemplateBasicAuth() {
     RestTemplate result =
-        new RestTemplateBuilder().basicAuthentication(restConfiguration.getRestUser(),
-            restConfiguration.getRestPassword()).build();
+        new RestTemplateBuilder()
+            .basicAuthentication(
+                restConfiguration.getRestUser(), restConfiguration.getRestPassword())
+            .build();
     result.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
     return result;
   }
@@ -193,16 +191,19 @@ public class RestConsumer {
       File trustStoreFile = ResourceUtils.getFile(truststore);
 
       // load up the key and trust store
-      SSLContext sslContext = SSLContextBuilder.create()
-          .loadKeyMaterial(keyStoreFile, keystorePassword, keystorePassword)
-          .loadTrustMaterial(trustStoreFile, truststorePassword).build();
+      SSLContext sslContext =
+          SSLContextBuilder.create()
+              .loadKeyMaterial(keyStoreFile, keystorePassword, keystorePassword)
+              .loadTrustMaterial(trustStoreFile, truststorePassword)
+              .build();
 
       // set the http client to use the loaded key and trust store
       HttpClient client = HttpClients.custom().setSSLContext(sslContext).build();
       ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(client);
 
       // set the charset
-      resultTemplate.getMessageConverters()
+      resultTemplate
+          .getMessageConverters()
           .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
       resultTemplate.setRequestFactory(requestFactory);
 
