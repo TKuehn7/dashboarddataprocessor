@@ -19,9 +19,11 @@
 package de.ukbonn.mwtek.dashboard.auth;
 
 import de.ukbonn.mwtek.dashboard.configuration.AbstractRestConfiguration;
-import java.io.File;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import javax.net.ssl.SSLContext;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -32,6 +34,10 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.HttpHeaders;
+import org.json.*;
+import java.util.Collections;
 
 /** Base class for all rest consumer in this project. */
 @Slf4j
@@ -70,6 +76,9 @@ public class RestConsumer {
       case "NONE" -> {
         return getRestTemplateNone();
       } // case
+      case "TOKEN" -> {
+        return getRestTemplateToken();
+      } // case
       default -> {
         return getRestTemplateBasicAuth();
       } // default
@@ -84,6 +93,68 @@ public class RestConsumer {
   protected RestTemplate getRestTemplateNone() {
     RestTemplate result = new RestTemplateBuilder().build();
     result.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+    return result;
+  }
+
+  /**
+   * helper for REST calls that use keycloak token authentication
+   *
+   * @return a pre configured spring RestTemplate object
+   */
+  protected RestTemplate getRestTemplateToken() {
+    String accessToken = "";
+
+    try {
+      String tokenUrl = restConfiguration.getTokenUrl();
+      String clientId = restConfiguration.getClientId();
+      String clientSecret = restConfiguration.getClientSecret();
+
+      // create post request to fetch access token
+      String body = "client_id=" + clientId + "&client_secret=" + clientSecret + "&grant_type=client_credentials";
+      URL url = new URL(tokenUrl);
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("POST");
+      connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+      connection.setDoOutput(true);
+
+      // write the post body
+      try (OutputStream os = connection.getOutputStream()) {
+        byte[] input = body.getBytes(StandardCharsets.UTF_8);
+        os.write(input, 0, input.length);
+      }
+
+      // get response
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+          response.append(line);
+        }
+
+        // extract access token from response
+        accessToken = new JSONObject(response.toString()).getString("access_token");
+
+      } catch (IOException e) {
+        log.error("Couldn't fetch access token due to: " + connection.getResponseMessage() +
+                " (Code: " + connection.getResponseCode() + ")");
+      }
+    } catch (Exception e) {
+      log.error("Couldn't fetch access token due to following exception: " + e.getMessage());
+    }
+
+    // build rest template
+    RestTemplate result = new RestTemplateBuilder().build();
+    result.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+
+    // use interceptor to add fetched access token to request
+    String finalAccessToken = accessToken;
+    ClientHttpRequestInterceptor bearerTokenInterceptor = (request, body, execution) -> {
+      request.getHeaders().set(HttpHeaders.AUTHORIZATION, "Bearer " + finalAccessToken);
+      return execution.execute(request, body);
+    };
+
+    result.setInterceptors(Collections.singletonList(bearerTokenInterceptor));
+
     return result;
   }
 

@@ -41,7 +41,24 @@ public abstract class AbstractRestConfiguration {
   /** The full url (including hostname, port and parameters) to the rest endpoint. */
   private String restUrl;
 
-  /** The username used when basic authentication (default method) is selected. */
+  /**
+   * The full url (including hostname, port and realm) to the token generate url of the keycloak server.
+   */
+  private String tokenUrl;
+
+  /**
+   * The client id, which is configured in keycloak for the fhir server. Used to generate the access token.
+   */
+  private String clientId;
+
+  /**
+   * The client secret, which is configured in keycloak for the fhir server. Used to generate the access token.
+   */
+  private String clientSecret;
+
+  /**
+   * The username used when basic authentication (default method) is selected.
+   */
   private String restUser;
 
   /** The password used when basic authentication (default method) is selected. */
